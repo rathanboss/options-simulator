@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Options Payoff Matrix Dashboard</title>
-    <!-- Corrected UMD CDN framework configuration for direct offline/local desktop page execution -->
-    <script src="https://cloudflare.com"></script>
     <style>
         /* Premium Deep Slate Dark Mode Interface Styles */
         body {
@@ -73,7 +71,7 @@
             font-family: monospace;
         }
 
-        /* Graph Box Panel Coordinate View */
+        /* Pure CSS Custom Graph Box Panel */
         .graph-panel {
             background-color: #1a2235;
             border: 1px solid #2d3748;
@@ -81,10 +79,46 @@
             padding: 16px;
             margin-bottom: 24px;
             position: relative;
-            height: 320px;
+            height: 250px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            overflow: hidden;
         }
 
-        /* Switch Strategy Toggles styling */
+        /* Zero Reference Guideline */
+        .zero-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 50%;
+            border-top: 1px dashed rgba(255, 255, 255, 0.2);
+            z-index: 1;
+        }
+
+        /* Interactive Graph Points */
+        .graph-bar {
+            flex: 1;
+            margin: 0 1px;
+            background-color: #38bdf8;
+            min-height: 2px;
+            z-index: 2;
+            transition: height 0.1s ease;
+        }
+
+        /* Dynamic Indicator Line for Active Current Price */
+        .price-marker {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: #a855f7;
+            box-shadow: 0 0 8px #a855f7;
+            z-index: 3;
+            transition: left 0.1s ease;
+        }
+
+        /* Switch Strategy Toggles */
         .strategy-selector {
             display: flex;
             background-color: #1f2937;
@@ -112,11 +146,11 @@
         }
 
         .strat-btn.active-put {
-            background-color: #4b5563;
+            background-color: #dc2626;
             color: #ffffff;
         }
 
-        /* Parameter Slider Blocks layout grid */
+        /* Parameter Slider Blocks */
         .slider-group {
             margin-bottom: 18px;
         }
@@ -159,7 +193,6 @@
             box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
         }
 
-        /* Visual Dynamic States color profiles */
         .color-profit { color: #34d399; }
         .color-loss { color: #f87171; }
         .color-neutral { color: #ffffff; }
@@ -169,13 +202,13 @@
 
     <div class="dashboard-container">
         
-        <!-- Document Header Identification Info -->
+        <!-- Header Section -->
         <div class="header-area">
             <h2 class="header-title">Custom Configuration Matrix</h2>
-            <p class="header-desc">Explore manual variables below to dynamically calculate and inspect custom option payoff profiles live on the lecture projector.</p>
+            <p class="header-desc">Adjust sliders below. The mathematical graph will render perfectly without any external internet links or dependencies.</p>
         </div>
 
-        <!-- Top Real-Time Numerical Data Counters Matrix -->
+        <!-- Top Real-Time Value Counters Matrix -->
         <div class="counters-grid">
             <div class="counter-card">
                 <h3>Underlying Price</h3>
@@ -191,16 +224,17 @@
             </div>
         </div>
 
-        <!-- Live Visualizing Coordinate Graph Line Panel -->
-        <div class="graph-panel">
-            <canvas id="payoffChart"></canvas>
+        <!-- Independent Native HTML/CSS Bar Graph -->
+        <div class="graph-panel" id="customGraph">
+            <div class="zero-line"></div>
+            <div class="price-marker" id="activeMarker"></div>
+            <!-- Dynamic Graph bars are injected here automatically by Javascript -->
         </div>
 
-        <!-- Interactive Settings Panel Configuration Controls -->
+        <!-- Interactive Settings Configuration Controls -->
         <div style="border-top: 1px solid #1f2937; padding-top: 20px;">
             <h3 style="font-size: 13px; color: #94a3b8; text-transform: uppercase; margin: 0 0 10px 0;">Option Type Strategy</h3>
             
-            <!-- Strategy Selector Toggle Switch buttons -->
             <div class="strategy-selector">
                 <button id="btnCall" onclick="changeStrategy('call')" class="strat-btn active-call">Call Option (Right to Buy)</button>
                 <button id="btnPut" onclick="changeStrategy('put')" class="strat-btn">Put Option (Right to Sell)</button>
@@ -224,7 +258,7 @@
                 <input type="range" id="slideStrike" min="40" max="160" value="100" oninput="executeRecalculation()" class="custom-range">
             </div>
 
-            <!-- Slider 3: Premium Fee Value Paid -->
+            <!-- Slider 3: Premium Fee Paid -->
             <div class="slider-group">
                 <div class="slider-info">
                     <label for="slidePremium">Upfront Premium Cost ($):</label>
@@ -236,51 +270,35 @@
 
     </div>
 
-    <!-- Fixed JavaScript Module placed at the bottom to guarantee execution hooks -->
+    <!-- Self-Contained Native Script Engine -->
     <script>
         let currentStrategy = 'call';
-        let chartInstance = null;
+        const totalBars = 50; // Resolution grid mapping count
+        
+        // Generate physical native graph DOM bars layout once on setup
+        const graphContainer = document.getElementById('customGraph');
+        for (let i = 0; i < totalBars; i++) {
+            const bar = document.createElement('div');
+            bar.className = 'graph-bar';
+            bar.id = 'bar-' + i;
+            graphContainer.appendChild(bar);
+        }
 
-        // Initialize and build the interactive chart setup profiles
-        function initChart() {
-            const ctx = document.getElementById('payoffChart').getContext('2d');
-            
-            chartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    datasets: [
-                        {
-                            label: 'Payoff Profile',
-                            data: [], // Populated dynamically via loop array values below
-                            borderColor: '#38bdf8',
-                            borderWidth: 3,
-                            pointRadius: 0,
-                            fill: false,
-                            tension: 0
-                        },
-                        {
-                            label: 'Zero Line',
-                            data: [{x: 0, y: 0}, {x: 200, y: 0}],
-                            borderColor: 'rgba(255, 255, 255, 0.2)',
-                            borderWidth: 1,
-                            pointRadius: 0,
-                            fill: false
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: {
-                            type: 'linear',
-                            position: 'bottom',
-                            min: 0,
-                            max: 200,
-                            grid: { color: '#2d3748' },
-                            ticks: { color: '#94a3b8', stepSize: 20 }
-                        },
-                        y: {
-                            type: 'linear',
-                            min: -60,
+        function changeStrategy(mode) {
+            currentStrategy = mode;
+            const btnCall = document.getElementById('btnCall');
+            const btnPut = document.getElementById('btnPut');
+
+            if (mode === 'call') {
+                btnCall.className = "strat-btn active-call";
+                btnPut.className = "strat-btn";
+            } else {
+                btnCall.className = "strat-btn";
+                btnPut.className = "strat-btn active-put";
+            }
+            executeRecalculation();
+        }
+
+        function executeRecalculation() {
+            const underlying = parseInt(document.getElementById('slideUnderlying').value);
+            const strike = parseInt(document.getElementById('slideStrike').value);
